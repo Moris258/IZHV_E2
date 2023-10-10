@@ -718,7 +718,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b628077f9296f6240ac3fbf4ea6eafe4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jumpVelocity: 2
+  jumpVelocity: 1.05
   groundCheckDistance: 0.1
   groundLayerMask:
     serializedVersion: 2
@@ -1266,13 +1266,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawnObstacles: 1
-  spawnFrequencyMean: 2
-  spawnFrequencyStd: 0
+  spawnFrequencyMean: 0.8
+  spawnFrequencyStd: 0.1
+  patternLikelihood: 0.15
   spawnOffset:
     x: 0
     y: 2
     z: 0
-  spawnSize: 1
+  spawnSize: 0.7
   spawnLayer: Obstacle
   obstaclePrefab: {fileID: 444823138257878674, guid: d9e6dffab2dc3ef4dbf678bf85c63c93, type: 3}
 --- !u!1 &1051612544

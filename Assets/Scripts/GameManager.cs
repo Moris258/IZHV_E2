@@ -61,7 +61,7 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// Whether tutorial was shown or not.
     /// </summary>
-    private bool mTutorialShown = false;
+    private static bool sTutorialShown = false;
     
     /// <summary>
     /// Getter for the singleton GameManager object.
@@ -102,8 +102,8 @@ public class GameManager : MonoBehaviour
         // Reset the game if requested.
         if (Input.GetButtonDown("Cancel"))
         { ResetGame(); }
-
-        if(!mTutorialShown && Input.GetAxisRaw("Vertical") > 0.0)
+        
+        if(sGameStarted && !sTutorialShown && Input.GetAxisRaw("Vertical") > 0.0)
         {
             HideTutorial();
         }
@@ -133,7 +133,11 @@ public class GameManager : MonoBehaviour
             startText.SetActive(false);
             scoreText.SetActive(true);
             lossText.SetActive(false);
-            tutorialText.SetActive(true);
+            if (sTutorialShown)
+                tutorialText.SetActive(false);
+            else
+                ShowTutorial();
+
         }
         else
         { // Setup a new game -> Wait for start.
@@ -157,7 +161,7 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         // Reload the scene as started.
-        sGameStarted = true; 
+        sGameStarted = true;
         ResetGame();
     }
     
@@ -176,7 +180,7 @@ public class GameManager : MonoBehaviour
     public void LooseGame()
     {
         // Hides tutorial in case it wasn't already hidden after game lost.
-        if (!mTutorialShown) HideTutorial();
+        if (!sTutorialShown) tutorialText.SetActive(false);
 
         // Get the spawner script.
         var sp = spawner.GetComponent<Spawner>();
@@ -195,8 +199,18 @@ public class GameManager : MonoBehaviour
     /// </summary>
     private void HideTutorial()
     {
-        mTutorialShown = true;
         tutorialText.SetActive(false);
+        sTutorialShown = true;
+    }
+
+    /// <summary>
+    /// Shows the tutorial at the start of a player's first game.
+    /// </summary>
+    private void ShowTutorial()
+    {
+        if (sTutorialShown) return;
+
+        tutorialText.SetActive(true);
     }
     
     /// <summary>

@@ -6,6 +6,75 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 
 /// <summary>
+/// Possible spawn locations for obstacles.
+/// </summary>
+public enum SpawnLocation
+{
+    Above = 1,
+    Middle = 0,
+    Below = -1,
+    Error = -1000,
+}
+
+enum SpawnPatternType
+{
+    Double,
+    Triple,
+    AboveBelow,
+}
+
+class SpawnPattern
+{
+    private SpawnLocation[] mLocations;
+    private float mSpawnTimeInterval;
+    private int nextSpawn;
+
+    public SpawnPattern(float spawnTimeInterval, SpawnPatternType pattern)
+    {
+        this.mSpawnTimeInterval = spawnTimeInterval;
+        this.nextSpawn = 0;
+        switch (pattern)
+        {
+            case SpawnPatternType.Double:
+                mLocations = new SpawnLocation[2];
+                break;
+            case SpawnPatternType.Triple:
+                mLocations = new SpawnLocation[3];
+                break;
+            case SpawnPatternType.AboveBelow:
+                mLocations = new SpawnLocation[2];
+                mLocations[0] = SpawnLocation.Below;
+                mLocations[1] = SpawnLocation.Above;
+                mSpawnTimeInterval = 0.0f;
+                return;
+        }
+        float location = Random.value;
+        SpawnLocation spawnLocation;
+        if (location > 0.5f)
+            spawnLocation = SpawnLocation.Below;
+        else
+            spawnLocation = SpawnLocation.Above;
+        for(int i = 0; i < mLocations.Length; i++)
+        {
+            mLocations[i] = spawnLocation;
+        }
+
+    }
+
+    public SpawnLocation[] Locations { get => mLocations; }
+    public float SpawnTimeInterval { get => mSpawnTimeInterval; }
+
+    public SpawnLocation GetNextLocation()
+    {
+        if (this.nextSpawn >= mLocations.Length)
+            return SpawnLocation.Error;
+
+        this.nextSpawn++;
+        return mLocations[this.nextSpawn - 1];
+    }
+}
+
+/// <summary>
 /// The main Spawner behaviour.
 /// </summary>
 public class Spawner : MonoBehaviour
@@ -24,6 +93,11 @@ public class Spawner : MonoBehaviour
     /// Standard deviation of the frequency of spawning as n per second.
     /// </summary>
     public float spawnFrequencyStd = 0.5f;
+
+    /// <summary>
+    /// The likelihood that a spawn pattern will be followed.
+    /// </summary>
+    public float patternLikelihood = 0.2f;
     
     /// <summary>
     /// Position offset of the spawned obstacles.
@@ -56,6 +130,11 @@ public class Spawner : MonoBehaviour
     private float nextSpawnIn = 0.0f;
 
     /// <summary>
+    /// Current spawn pattern to be followed, null if none is being followed.
+    /// </summary>
+    private SpawnPattern spawnPattern;
+
+    /// <summary>
     /// Called before the first frame update.
     /// </summary>
     void Start()
@@ -72,27 +151,93 @@ public class Spawner : MonoBehaviour
             if (spawnAccumulator >= nextSpawnIn)
             { // Spawn at most one obstacle per frame.
                 spawnAccumulator -= nextSpawnIn;
+
+                // Randomize pattern
+                if (spawnPattern == null)
+                    spawnPattern = RandomizeSpawnPattern();
+
+                // Advance pattern if randomized
+                if (spawnPattern != null)
+                {
+                    AdvanceSpawnPattern();
+                    return;
+                }
+
+                // Spawn random obstacle
                 nextSpawnIn = RandomNormal(spawnFrequencyMean, spawnFrequencyStd);
-                
-                SpawnObstacle();
+
+                SpawnRandomObstacle();
+
             }
         }
     }
 
     /// <summary>
+    /// Spawns the next obstacle in a pattern
+    /// </summary>
+    private void AdvanceSpawnPattern()
+    {
+        if (spawnPattern == null) return;
+
+        SpawnLocation location = spawnPattern.GetNextLocation();
+        if (location == SpawnLocation.Error)
+        {
+            // End of spawn pattern reached
+            nextSpawnIn = spawnFrequencyMean * 1.2f;   // Try to avoid impossible patterns
+            spawnPattern = null;
+            return;
+        }
+        SpawnObstacle(location);
+        nextSpawnIn = spawnPattern.SpawnTimeInterval;
+    }
+
+    /// <summary>
+    /// Randomizes if a spawn pattern should be generated.
+    /// </summary>
+    /// <returns>Generated spawn pattern. Null if no pattern should be generated.</returns>
+    private SpawnPattern RandomizeSpawnPattern()
+    {
+        float random = Random.value;
+        if (random <= patternLikelihood)
+        {
+            Array values = Enum.GetValues(typeof(SpawnPatternType));
+            random = Random.value % 1.0f;
+            int index = (int)Math.Floor(random * values.Length);
+            SpawnPattern pattern = new SpawnPattern(RandomNormal(spawnFrequencyMean / 2.0f, spawnFrequencyStd), (SpawnPatternType)values.GetValue(index));
+            return pattern;
+        }
+        else
+            return null;
+    }
+
+    /// <summary>
+    /// Spawns an obstacle in a random place.
+    /// </summary>
+    private void SpawnRandomObstacle()
+    {
+        float location = Random.value;
+        SpawnLocation toSpawn;
+        if (location > 0.667f)
+            toSpawn = SpawnLocation.Below;
+        else if (location > 0.333f)
+            toSpawn = SpawnLocation.Middle;
+        else
+            toSpawn = SpawnLocation.Above;
+
+        SpawnObstacle(toSpawn);
+    }
+
+    /// <summary>
     /// Spawn obstacle if there is enough space.
     /// </summary>
-    public void SpawnObstacle()
+    /// <param name="location">Determines the location for the obstacle to spawn.</param>
+    public void SpawnObstacle(SpawnLocation location)
     {
         // Spawn the obstacle.
         var obstacle = Instantiate(obstaclePrefab, transform);
 
         // Move it to the target location.
-        var spawnDown = RandomBool();
-        obstacle.transform.position += (Vector3)(spawnDown ? 
-            spawnOffset + (1.0f - spawnSize) / 2.0f : 
-            -spawnOffset - (1.0f - spawnSize) / 2.0f
-        );
+        obstacle.transform.position += (Vector3)(spawnOffset * (float)location + (float)location * ((1.0f - spawnSize) / 2.0f));
         
         // Scale it.
         obstacle.transform.localScale = new Vector3(spawnSize, spawnSize, spawnSize);
@@ -121,6 +266,7 @@ public class Spawner : MonoBehaviour
     public void ResetSpawn()
     {
         spawnAccumulator = 0.0f;
+        spawnPattern = null;
         nextSpawnIn = RandomNormal(spawnFrequencyMean, spawnFrequencyStd);
     }
 

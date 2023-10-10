@@ -118,7 +118,6 @@ public class Player : MonoBehaviour
     {
         // Process player input.
         var verticalMovement = Input.GetAxisRaw("Vertical");
-        var horizontalMovement = Input.GetAxisRaw("Horizontal");
         var jumpMovement = Input.GetButtonDown("Jump");
         var onGround = IsOnGround();
         
@@ -132,7 +131,7 @@ public class Player : MonoBehaviour
         // Switch gravity with vertical movement.
         if (verticalMovement > 0.0 && !mSwitchedGravity)
         {
-            //mCurrentGravity = verticalMovement > 0.0f ? 1.0f : -1.0f;
+            // Invert current gravity
             mCurrentGravity = mCurrentGravity > 0.0f ? -1.0f : 1.0f;
             Physics2D.gravity = mCurrentGravity * new Vector2(
                 Math.Abs(Physics2D.gravity.x),
