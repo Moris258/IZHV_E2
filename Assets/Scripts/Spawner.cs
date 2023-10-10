@@ -203,7 +203,8 @@ public class Spawner : MonoBehaviour
             Array values = Enum.GetValues(typeof(SpawnPatternType));
             random = Random.value % 1.0f;
             int index = (int)Math.Floor(random * values.Length);
-            SpawnPattern pattern = new SpawnPattern(RandomNormal(spawnFrequencyMean / 2.0f, spawnFrequencyStd), (SpawnPatternType)values.GetValue(index));
+            random = Math.Max(RandomNormal(spawnFrequencyMean / 2.0f, spawnFrequencyStd), 0.25f); //Limit spawn interval to 0.25f to avoid overlap
+            SpawnPattern pattern = new SpawnPattern(random, (SpawnPatternType)values.GetValue(index));
             return pattern;
         }
         else
