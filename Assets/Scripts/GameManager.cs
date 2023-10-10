@@ -22,6 +22,11 @@ public class GameManager : MonoBehaviour
     /// GameObject used for the score text.
     /// </summary>
     public GameObject scoreText;
+
+    /// <summary>
+    /// GameObject used for the tutorial text;
+    /// </summary>
+    public GameObject tutorialText;
     
     /// <summary>
     /// GameObject representing the main Player character.
@@ -52,6 +57,11 @@ public class GameManager : MonoBehaviour
     /// Singleton instance of the GameManager.
     /// </summary>
     private static GameManager sInstance;
+
+    /// <summary>
+    /// Whether tutorial was shown or not.
+    /// </summary>
+    private bool mTutorialShown = false;
     
     /// <summary>
     /// Getter for the singleton GameManager object.
@@ -93,6 +103,11 @@ public class GameManager : MonoBehaviour
         if (Input.GetButtonDown("Cancel"))
         { ResetGame(); }
 
+        if(!mTutorialShown && Input.GetAxisRaw("Vertical") > 0.0)
+        {
+            HideTutorial();
+        }
+
         if (sGameStarted && !mGameLost)
         {
             // Increment the score by elapsed time.
@@ -118,6 +133,7 @@ public class GameManager : MonoBehaviour
             startText.SetActive(false);
             scoreText.SetActive(true);
             lossText.SetActive(false);
+            tutorialText.SetActive(true);
         }
         else
         { // Setup a new game -> Wait for start.
@@ -128,6 +144,7 @@ public class GameManager : MonoBehaviour
             startText.SetActive(true);
             scoreText.SetActive(false);
             lossText.SetActive(false);
+            tutorialText.SetActive(false);
         }
         
         // Set the state.
@@ -158,6 +175,9 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void LooseGame()
     {
+        // Hides tutorial in case it wasn't already hidden after game lost.
+        if (!mTutorialShown) HideTutorial();
+
         // Get the spawner script.
         var sp = spawner.GetComponent<Spawner>();
         // Stop the obstacles.
@@ -168,6 +188,15 @@ public class GameManager : MonoBehaviour
         lossText.SetActive(true);
         // Loose the game.
         mGameLost = true;
+    }
+
+    /// <summary>
+    /// Hides tutorial after player presses invert gravity key once.
+    /// </summary>
+    private void HideTutorial()
+    {
+        mTutorialShown = true;
+        tutorialText.SetActive(false);
     }
     
     /// <summary>

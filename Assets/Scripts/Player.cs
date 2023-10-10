@@ -130,9 +130,10 @@ public class Player : MonoBehaviour
         { mRB.velocity = -Physics2D.gravity * jumpVelocity; }
         
         // Switch gravity with vertical movement.
-        if (verticalMovement != 0.0 && !mSwitchedGravity)
+        if (verticalMovement > 0.0 && !mSwitchedGravity)
         {
-            mCurrentGravity = verticalMovement > 0.0f ? 1.0f : -1.0f;
+            //mCurrentGravity = verticalMovement > 0.0f ? 1.0f : -1.0f;
+            mCurrentGravity = mCurrentGravity > 0.0f ? -1.0f : 1.0f;
             Physics2D.gravity = mCurrentGravity * new Vector2(
                 Math.Abs(Physics2D.gravity.x),
                 Math.Abs(Physics2D.gravity.y)
